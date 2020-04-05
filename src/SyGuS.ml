@@ -23,6 +23,7 @@ type t = {
   post_func : func ;
   pre_func : func ;
   trans_func : func ;
+  trans_branches : string list ;
 
   constants : Value.t list ;
   functions : func list ;
@@ -117,15 +118,17 @@ let parse_sexps (sexps : Sexp.t list) : t =
     ; if String.equal !logic ""
       then (logic := "LIA" ; Log.debug (lazy ("Using default logic: LIA")))
     ; let dups = List.filter !extra_variables ~f:(List.mem !variables ~equal:(fun x y -> String.equal (fst x) (fst y)))
-       in if dups <> [] then raise (Parse_Exn ( "Multiple declarations of ["
-                                              ^ (List.to_string_map dups ~sep:", " ~f:fst)
-                                              ^ "]"))
+       in if not (List.is_empty dups)
+          then raise (Parse_Exn ( "Multiple declarations of ["
+                                ^ (List.to_string_map dups ~sep:", " ~f:fst)
+                                ^ "]"))
           else { constants = !consts
                ; functions = List.rev !funcs
                ; logic = !logic
                ; post_func = List.find_exn ~f:(fun f -> String.equal f.name !postf_name) !funcs
                ; pre_func = List.find_exn ~f:(fun f -> String.equal f.name !pref_name) !funcs
                ; trans_func = List.find_exn ~f:(fun f -> String.equal f.name !transf_name) !funcs
+               ; trans_branches = []
                ; variables = !extra_variables @ !variables
                ; synth_variables = !invf_vars
                ; inv_func = { args = !invf_vars
